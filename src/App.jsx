@@ -62,10 +62,10 @@ function App() {
     <main className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">Local MVP</p>
-          <h1>WeChat Schedule Assistant</h1>
+          <p className="eyebrow">本地演示版</p>
+          <h1>微信日程助手</h1>
         </div>
-        <ol className="workflow-list" aria-label="Agent workflow">
+        <ol className="workflow-list" aria-label="助手工作流">
           {WORKFLOW_STEPS.map((step) => (
             <li key={step.id}>{step.label}</li>
           ))}

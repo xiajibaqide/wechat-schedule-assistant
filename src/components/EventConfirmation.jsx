@@ -7,6 +7,12 @@ const emptyForm = {
   location: '',
 };
 
+const statusText = {
+  pending: '待确认',
+  confirmed: '已确认',
+  dismissed: '已忽略',
+};
+
 function EventConfirmation({ draftEvent, onConfirm, onDismiss }) {
   const [formData, setFormData] = useState(emptyForm);
 
@@ -34,8 +40,8 @@ function EventConfirmation({ draftEvent, onConfirm, onDismiss }) {
   if (!draftEvent) {
     return (
       <section className="panel">
-        <h2>Confirm Event</h2>
-        <p className="muted">Paste a message and extract a draft event first.</p>
+        <h2>确认日程</h2>
+        <p className="muted">请先粘贴消息并提取日程草稿。</p>
       </section>
     );
   }
@@ -47,51 +53,55 @@ function EventConfirmation({ draftEvent, onConfirm, onDismiss }) {
 
   return (
     <section className="panel">
-      <h2>Confirm Event</h2>
+      <h2>确认日程</h2>
       <div className="status-line">
-        <span>Status: {draftEvent.status}</span>
-        <span>Confidence: {Math.round(draftEvent.confidence * 100)}%</span>
+        <span>状态：{statusText[draftEvent.status] || draftEvent.status}</span>
+        <span>置信度：{Math.round(draftEvent.confidence * 100)}%</span>
       </div>
 
       <div className="stack">
         <label>
-          Title
+          活动标题
           <input
             value={formData.title}
             onChange={(event) => updateField('title', event.target.value)}
+            placeholder="例如：数据库课程答疑"
           />
         </label>
         <label>
-          Date
+          日期
           <input
             type="date"
             value={formData.date}
             onChange={(event) => updateField('date', event.target.value)}
+            placeholder="选择日期"
           />
         </label>
         <label>
-          Time
+          时间
           <input
             type="time"
             value={formData.time}
             onChange={(event) => updateField('time', event.target.value)}
+            placeholder="选择时间"
           />
         </label>
         <label>
-          Location
+          地点
           <input
             value={formData.location}
             onChange={(event) => updateField('location', event.target.value)}
+            placeholder="例如：A203"
           />
         </label>
       </div>
 
       <div className="button-row">
         <button type="button" onClick={() => onConfirm(updatedEvent)}>
-          Confirm
+          确认保存
         </button>
         <button type="button" onClick={() => onDismiss(updatedEvent)}>
-          Dismiss
+          忽略
         </button>
       </div>
     </section>

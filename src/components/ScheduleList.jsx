@@ -7,6 +7,12 @@ const emptyEditForm = {
   location: '',
 };
 
+const statusText = {
+  pending: '待确认',
+  confirmed: '已确认',
+  dismissed: '已忽略',
+};
+
 function ScheduleList({ events, onDelete, onUpdate }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
@@ -46,9 +52,9 @@ function ScheduleList({ events, onDelete, onUpdate }) {
 
   return (
     <section className="panel wide-panel">
-      <h2>Local Schedule</h2>
+      <h2>本地日程</h2>
       {confirmedEvents.length === 0 ? (
-        <p className="muted">No saved events yet.</p>
+        <p className="muted">还没有保存的日程。</p>
       ) : (
         <ul className="event-list">
           {confirmedEvents.map((eventItem) => (
@@ -65,10 +71,10 @@ function ScheduleList({ events, onDelete, onUpdate }) {
                   <EventSummary eventItem={eventItem} />
                   <div className="button-row">
                     <button type="button" onClick={() => startEditing(eventItem)}>
-                      Edit
+                      编辑
                     </button>
                     <button type="button" onClick={() => onDelete(eventItem.id)}>
-                      Delete
+                      删除
                     </button>
                   </div>
                 </>
@@ -84,13 +90,14 @@ function ScheduleList({ events, onDelete, onUpdate }) {
 function EventSummary({ eventItem }) {
   return (
     <div>
-      <strong>{eventItem.title || 'Untitled event'}</strong>
+      <strong>{eventItem.title || '未命名日程'}</strong>
       <p>
-        {eventItem.date || 'No date'} {eventItem.time || ''}
+        {eventItem.date || '未设置日期'} {eventItem.time || ''}
         {eventItem.location ? ` - ${eventItem.location}` : ''}
       </p>
       <p className="muted">
-        {eventItem.status} - confidence {Math.round(eventItem.confidence * 100)}%
+        {statusText[eventItem.status] || eventItem.status} - 置信度{' '}
+        {Math.round(eventItem.confidence * 100)}%
       </p>
     </div>
   );
@@ -100,41 +107,45 @@ function EditEventForm({ editForm, onChange, onSave, onCancel }) {
   return (
     <div className="stack">
       <label>
-        Title
+        活动标题
         <input
           value={editForm.title}
           onChange={(event) => onChange('title', event.target.value)}
+          placeholder="例如：班会"
         />
       </label>
       <label>
-        Date
+        日期
         <input
           type="date"
           value={editForm.date}
           onChange={(event) => onChange('date', event.target.value)}
+          placeholder="选择日期"
         />
       </label>
       <label>
-        Time
+        时间
         <input
           type="time"
           value={editForm.time}
           onChange={(event) => onChange('time', event.target.value)}
+          placeholder="选择时间"
         />
       </label>
       <label>
-        Location
+        地点
         <input
           value={editForm.location}
           onChange={(event) => onChange('location', event.target.value)}
+          placeholder="例如：图书馆门口"
         />
       </label>
       <div className="button-row">
         <button type="button" onClick={onSave}>
-          Save
+          保存
         </button>
         <button type="button" onClick={onCancel}>
-          Cancel
+          取消
         </button>
       </div>
     </div>

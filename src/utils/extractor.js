@@ -1,4 +1,20 @@
-const ACTIVITY_KEYWORDS = ['班会', '考试', '答疑', '训练', '讨论', '集合', '活动'];
+const ACTIVITY_KEYWORDS = [
+  '班会',
+  '开会',
+  '会议',
+  '考试',
+  '作业',
+  '提交',
+  'DDL',
+  '答疑',
+  '训练',
+  '讨论',
+  '集合',
+  '活动',
+  '比赛',
+  '报名',
+  '讲座',
+];
 
 const WEEKDAY_MAP = {
   日: 0,
@@ -31,6 +47,7 @@ export function extractEventDraft(messageText) {
     sourceText: messageText,
     status: 'pending',
     confidence: calculateConfidence({
+      sourceText: cleanText,
       date: dateResult.value,
       time: timeResult.value,
       title,
@@ -94,7 +111,6 @@ function parseExplicitDate(text, today) {
 }
 
 function parseRelativeDate(text, today) {
-  // Relative date words can include time-period words, such as 明晚 or 后天下午.
   const relativeDayMatch = text.match(/今天|今晚|明天|明晚|后天/);
 
   if (!relativeDayMatch) {
@@ -118,7 +134,7 @@ function parseRelativeDate(text, today) {
 }
 
 function parseWeekDate(text, today) {
-  // 本周 and 下周 are treated differently from a plain 周六.
+  // 本周 and 下周 use the Chinese Monday-Sunday week habit.
   const weekMatch = text.match(/(?:(本周|下周)([一二三四五六日天])|周([一二三四五六日天]))/);
 
   if (!weekMatch) {
@@ -185,7 +201,7 @@ function parseTime(text) {
 }
 
 function parseLocation(text) {
-  const locationMatch = text.match(/在(.+?)(开|进行|集合|上|参加|讨论|训练|考试|活动)/);
+  const locationMatch = text.match(/在(.+?)(开|进行|集合|上|参加|讨论|训练|考试|活动|比赛|报名|讲座)/);
 
   if (!locationMatch) {
     return {
@@ -203,16 +219,17 @@ function parseLocation(text) {
 function parseTitle(text) {
   const cleanTitle = text.replace(/^在/, '').trim();
 
-  // Prefer known activity words so the title stays focused on the event.
-  const activityKeyword = ACTIVITY_KEYWORDS.find((keyword) =>
-    cleanTitle.includes(keyword)
-  );
-
-  if (activityKeyword) {
+  if (hasActivityKeyword(cleanTitle)) {
     return cleanTitle;
   }
 
   return cleanTitle || '待确认活动';
+}
+
+function hasActivityKeyword(text) {
+  return ACTIVITY_KEYWORDS.some((keyword) => {
+    return text.toUpperCase().includes(keyword.toUpperCase());
+  });
 }
 
 function removeKnownParts(text, parts) {
@@ -229,26 +246,45 @@ function removeKnownParts(text, parts) {
   }, text);
 }
 
-function calculateConfidence({ date, time, title, location }) {
-  let confidence = 0.15;
+function calculateConfidence({ sourceText, date, time, title, location }) {
+  const hasKeyword = hasActivityKeyword(sourceText);
+  let confidence = 0.1;
 
   if (date) {
-    confidence += 0.3;
+    confidence += 0.2;
   }
 
   if (time) {
     confidence += 0.3;
   }
 
-  if (title && title !== '待确认活动') {
-    confidence += 0.2;
+  if (hasKeyword) {
+    confidence += 0.25;
   }
 
   if (location) {
+    confidence += 0.1;
+  }
+
+  if (title && title !== '待确认活动') {
     confidence += 0.05;
   }
 
-  return Math.min(confidence, 1);
+  // Ordinary chat often contains words like 今天/明天. Without time, place, or
+  // activity keywords, it should stay low-confidence and wait for user review.
+  if (date && !time && !location && !hasKeyword) {
+    confidence -= 0.15;
+  }
+
+  if (!time && !location && !hasKeyword) {
+    confidence = Math.min(confidence, 0.35);
+  }
+
+  return clampConfidence(confidence);
+}
+
+function clampConfidence(confidence) {
+  return Math.max(0, Math.min(confidence, 1));
 }
 
 function addDays(date, daysToAdd) {

@@ -38,3 +38,71 @@ Current date assumption for these examples: 2026-05-29.
 - Location recognition only handles simple `在...` patterns.
 - Ordinary chat may still produce a medium-low confidence draft if it contains a date word, so the user should dismiss it.
 - `5月30日` uses the current year.
+
+## ICS 导出测试
+
+### 场景 1：日期 + 时间 + 地点
+
+输入示例：
+
+```text
+明天下午3点在A203开班会
+```
+
+验证：
+
+- 可以保存为 confirmed
+- 点击“导出 .ics”
+- 成功下载文件
+- Google Calendar 可以导入
+- 标题正确
+- 时间正确
+- 地点正确
+
+### 场景 2：日期 + 时间，无地点
+
+输入示例：
+
+```text
+明天晚上7点项目讨论
+```
+
+验证：
+
+- 导入后无 LOCATION
+- 时间正常
+
+### 场景 3：仅日期（全天事件）
+
+输入示例：
+
+```text
+5月30日提交数据库作业
+```
+
+验证：
+
+- 导出成功
+- Google Calendar 显示为全天事件
+
+### 场景 4：无日期
+
+输入示例：
+
+```text
+记得完成数据库作业
+```
+
+验证：
+
+- 不导出到 ICS
+- 不生成 VEVENT
+
+## v1.2 测试结果
+
+- ICS 文件生成成功
+- Google Calendar 导入成功
+- 中文标题显示正常
+- 地点显示正常
+- 描述显示正常
+- 默认事件时长为 1 小时

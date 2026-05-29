@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { buildIcsCalendar, downloadIcsFile } from '../utils/icsExporter.js';
 
 const emptyEditForm = {
   title: '',
@@ -19,6 +20,7 @@ function ScheduleList({ events, onDelete, onUpdate }) {
   const confirmedEvents = events.filter(
     (eventItem) => eventItem.status === 'confirmed'
   );
+  const exportableEvents = confirmedEvents.filter((eventItem) => eventItem.date);
 
   function startEditing(eventItem) {
     setEditingId(eventItem.id);
@@ -50,9 +52,25 @@ function ScheduleList({ events, onDelete, onUpdate }) {
     cancelEditing();
   }
 
+  function handleExportIcs() {
+    const icsText = buildIcsCalendar(events);
+    const fileName = `wechat-schedule-${getTodayFileDate()}.ics`;
+
+    downloadIcsFile(icsText, fileName);
+  }
+
   return (
     <section className="panel wide-panel">
-      <h2>本地日程</h2>
+      <div className="button-row">
+        <h2>本地日程</h2>
+        <button
+          type="button"
+          onClick={handleExportIcs}
+          disabled={exportableEvents.length === 0}
+        >
+          导出 .ics
+        </button>
+      </div>
       {confirmedEvents.length === 0 ? (
         <p className="muted">还没有保存的日程。</p>
       ) : (
@@ -150,6 +168,15 @@ function EditEventForm({ editForm, onChange, onSave, onCancel }) {
       </div>
     </div>
   );
+}
+
+function getTodayFileDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 }
 
 export default ScheduleList;

@@ -1,3 +1,16 @@
+const ACTIVITY_KEYWORDS = ['班会', '考试', '答疑', '训练', '讨论', '集合', '活动'];
+
+const WEEKDAY_MAP = {
+  日: 0,
+  天: 0,
+  一: 1,
+  二: 2,
+  三: 3,
+  四: 4,
+  五: 5,
+  六: 6,
+};
+
 export function extractEventDraft(messageText) {
   const cleanText = normalizeMessage(messageText);
   const dateResult = parseDate(cleanText);
@@ -36,60 +49,101 @@ function normalizeMessage(messageText) {
 
 function parseDate(text) {
   const today = new Date();
-  const explicitDateMatch = text.match(/(\d{1,2})月(\d{1,2})日/);
+  const explicitDateResult = parseExplicitDate(text, today);
 
-  if (explicitDateMatch) {
-    const month = Number(explicitDateMatch[1]);
-    const day = Number(explicitDateMatch[2]);
-    const date = new Date(today.getFullYear(), month - 1, day);
-
-    return {
-      value: formatInputDate(date),
-      matchedText: explicitDateMatch[0],
-    };
+  if (explicitDateResult.value) {
+    return explicitDateResult;
   }
 
-  const relativeDayMatch = text.match(/今天|今晚|明天|后天/);
+  const relativeDateResult = parseRelativeDate(text, today);
 
-  if (relativeDayMatch) {
-    const daysToAdd = {
-      今天: 0,
-      今晚: 0,
-      明天: 1,
-      后天: 2,
-    };
-    const date = addDays(today, daysToAdd[relativeDayMatch[0]]);
-
-    return {
-      value: formatInputDate(date),
-      matchedText: relativeDayMatch[0],
-    };
+  if (relativeDateResult.value) {
+    return relativeDateResult;
   }
 
-  const weekdayMatch = text.match(/周([一二三四五六日天])/);
+  const weekDateResult = parseWeekDate(text, today);
 
-  if (weekdayMatch) {
-    const targetWeekday = {
-      日: 0,
-      天: 0,
-      一: 1,
-      二: 2,
-      三: 3,
-      四: 4,
-      五: 5,
-      六: 6,
-    }[weekdayMatch[1]];
-    const date = getNextWeekday(today, targetWeekday);
-
-    return {
-      value: formatInputDate(date),
-      matchedText: weekdayMatch[0],
-    };
+  if (weekDateResult.value) {
+    return weekDateResult;
   }
 
   return {
     value: '',
     matchedText: '',
+  };
+}
+
+function parseExplicitDate(text, today) {
+  const explicitDateMatch = text.match(/(\d{1,2})月(\d{1,2})日/);
+
+  if (!explicitDateMatch) {
+    return {
+      value: '',
+      matchedText: '',
+    };
+  }
+
+  const month = Number(explicitDateMatch[1]);
+  const day = Number(explicitDateMatch[2]);
+  const date = new Date(today.getFullYear(), month - 1, day);
+
+  return {
+    value: formatInputDate(date),
+    matchedText: explicitDateMatch[0],
+  };
+}
+
+function parseRelativeDate(text, today) {
+  // Relative date words can include time-period words, such as 明晚 or 后天下午.
+  const relativeDayMatch = text.match(/今天|今晚|明天|明晚|后天/);
+
+  if (!relativeDayMatch) {
+    return {
+      value: '',
+      matchedText: '',
+    };
+  }
+
+  const matchedText = relativeDayMatch[0];
+  const daysToAdd = matchedText.startsWith('后天')
+    ? 2
+    : matchedText.startsWith('明')
+      ? 1
+      : 0;
+
+  return {
+    value: formatInputDate(addDays(today, daysToAdd)),
+    matchedText,
+  };
+}
+
+function parseWeekDate(text, today) {
+  // 本周 and 下周 are treated differently from a plain 周六.
+  const weekMatch = text.match(/(?:(本周|下周)([一二三四五六日天])|周([一二三四五六日天]))/);
+
+  if (!weekMatch) {
+    return {
+      value: '',
+      matchedText: '',
+    };
+  }
+
+  const weekPrefix = weekMatch[1] || '';
+  const weekdayText = weekMatch[2] || weekMatch[3];
+  const targetWeekday = WEEKDAY_MAP[weekdayText];
+  let date;
+
+  if (weekPrefix === '本周') {
+    date = getWeekdayInCurrentWeek(today, targetWeekday);
+  } else if (weekPrefix === '下周') {
+    date = getWeekdayInNextWeek(today, targetWeekday);
+  } else {
+    date = getNextWeekday(today, targetWeekday);
+  }
+
+  return {
+    value: formatInputDate(date),
+    matchedText: weekMatch[0],
   };
 }
 
@@ -103,14 +157,14 @@ function parseTime(text) {
     };
   }
 
-  const chineseTimeMatch = text.match(/(凌晨|早上|上午|中午|下午|晚上|今晚)?(\d{1,2})点/);
+  const chineseTimeMatch = text.match(/(凌晨|早上|上午|中午|下午|晚上|今晚|明晚)?(\d{1,2})点/);
 
   if (chineseTimeMatch) {
     const period = chineseTimeMatch[1] || '';
     let hour = Number(chineseTimeMatch[2]);
 
-    // Keep the first version predictable: only common day periods are adjusted.
-    if ((period === '下午' || period === '晚上' || period === '今晚') && hour < 12) {
+    // Afternoon and evening words usually mean PM for 1-11 点.
+    if (['下午', '晚上', '今晚', '明晚'].includes(period) && hour < 12) {
       hour += 12;
     }
 
@@ -131,7 +185,7 @@ function parseTime(text) {
 }
 
 function parseLocation(text) {
-  const locationMatch = text.match(/在(.+?)(开|进行|集合|上|参加|讨论|训练)/);
+  const locationMatch = text.match(/在(.+?)(开|进行|集合|上|参加|讨论|训练|考试|活动)/);
 
   if (!locationMatch) {
     return {
@@ -147,9 +201,18 @@ function parseLocation(text) {
 }
 
 function parseTitle(text) {
-  const title = text.replace(/^在/, '').trim();
+  const cleanTitle = text.replace(/^在/, '').trim();
 
-  return title || '待确认活动';
+  // Prefer known activity words so the title stays focused on the event.
+  const activityKeyword = ACTIVITY_KEYWORDS.find((keyword) =>
+    cleanTitle.includes(keyword)
+  );
+
+  if (activityKeyword) {
+    return cleanTitle;
+  }
+
+  return cleanTitle || '待确认活动';
 }
 
 function removeKnownParts(text, parts) {
@@ -193,6 +256,25 @@ function addDays(date, daysToAdd) {
   nextDate.setDate(nextDate.getDate() + daysToAdd);
 
   return nextDate;
+}
+
+function getWeekdayInCurrentWeek(date, targetWeekday) {
+  const currentWeekday = getChineseWeekdayNumber(date.getDay());
+  const targetChineseWeekday = getChineseWeekdayNumber(targetWeekday);
+
+  return addDays(date, targetChineseWeekday - currentWeekday);
+}
+
+function getWeekdayInNextWeek(date, targetWeekday) {
+  const currentWeekday = getChineseWeekdayNumber(date.getDay());
+  const targetChineseWeekday = getChineseWeekdayNumber(targetWeekday);
+  const daysUntilNextWeekday = 7 - currentWeekday + targetChineseWeekday;
+
+  return addDays(date, daysUntilNextWeekday);
+}
+
+function getChineseWeekdayNumber(weekday) {
+  return weekday === 0 ? 7 : weekday;
 }
 
 function getNextWeekday(date, targetWeekday) {

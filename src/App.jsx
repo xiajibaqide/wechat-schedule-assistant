@@ -1,18 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MessageInput from './components/MessageInput.jsx';
 import EventConfirmation from './components/EventConfirmation.jsx';
 import ScheduleList from './components/ScheduleList.jsx';
 import ReminderPanel from './components/ReminderPanel.jsx';
 import { extractEventDraftHybrid } from './utils/hybridExtractor.js';
 import { requestNotificationPermission } from './utils/notificationService.js';
+import { startReminderLoop, stopReminderLoop } from './utils/reminderService.js';
 import { loadEvents, saveEvents } from './utils/storage.js';
 import { WORKFLOW_STEPS } from './utils/workflow.js';
 
 function App() {
   const [events, setEvents] = useState(() => loadEvents());
   const [draftEvent, setDraftEvent] = useState(null);
+  const eventsRef = useRef(events);
 
   useEffect(() => {
+    eventsRef.current = events;
     saveEvents(events);
   }, [events]);
 
@@ -20,6 +23,11 @@ function App() {
     requestNotificationPermission().catch(() => {
       // Notification permission is optional. Rejection should not break the app.
     });
+    startReminderLoop(() => eventsRef.current);
+
+    return () => {
+      stopReminderLoop();
+    };
   }, []);
 
   function handleExtract(messageText) {

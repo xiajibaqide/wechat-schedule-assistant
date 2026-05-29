@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { buildIcsCalendar, downloadIcsFile } from '../utils/icsExporter.js';
+import { showNotification } from '../utils/notificationService.js';
 
 const emptyEditForm = {
   title: '',
@@ -59,6 +60,12 @@ function ScheduleList({ events, onDelete, onUpdate }) {
     downloadIcsFile(icsText, fileName);
   }
 
+  function handleTestNotification() {
+    showNotification('微信日程助手', {
+      body: '浏览器通知测试成功',
+    });
+  }
+
   return (
     <section className="panel wide-panel">
       <div className="button-row">
@@ -69,6 +76,9 @@ function ScheduleList({ events, onDelete, onUpdate }) {
           disabled={exportableEvents.length === 0}
         >
           导出 .ics
+        </button>
+        <button type="button" onClick={handleTestNotification}>
+          测试通知
         </button>
       </div>
       {confirmedEvents.length === 0 ? (

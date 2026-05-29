@@ -4,6 +4,7 @@ import EventConfirmation from './components/EventConfirmation.jsx';
 import ScheduleList from './components/ScheduleList.jsx';
 import ReminderPanel from './components/ReminderPanel.jsx';
 import { extractEventDraftHybrid } from './utils/hybridExtractor.js';
+import { requestNotificationPermission } from './utils/notificationService.js';
 import { loadEvents, saveEvents } from './utils/storage.js';
 import { WORKFLOW_STEPS } from './utils/workflow.js';
 
@@ -14,6 +15,12 @@ function App() {
   useEffect(() => {
     saveEvents(events);
   }, [events]);
+
+  useEffect(() => {
+    requestNotificationPermission().catch(() => {
+      // Notification permission is optional. Rejection should not break the app.
+    });
+  }, []);
 
   function handleExtract(messageText) {
     const nextDraft = extractEventDraftHybrid(messageText);

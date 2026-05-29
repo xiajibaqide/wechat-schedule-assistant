@@ -24,20 +24,15 @@ function App() {
     const confirmedEvent = {
       ...updatedEvent,
       status: 'confirmed',
+      confirmedAt: new Date().toISOString(),
     };
 
     setEvents((currentEvents) => [confirmedEvent, ...currentEvents]);
     setDraftEvent(null);
   }
 
-  function handleDismiss(eventToDismiss) {
-    setEvents((currentEvents) => [
-      {
-        ...eventToDismiss,
-        status: 'dismissed',
-      },
-      ...currentEvents,
-    ]);
+  function handleDismiss() {
+    // Dismissed drafts are ignored in the local schedule for this MVP.
     setDraftEvent(null);
   }
 

@@ -27,9 +27,15 @@ function MessageInput({ onExtract }) {
         />
         <div className="button-row">
           <button type="submit">Extract draft</button>
-          <button type="button" onClick={() => setMessageText(sampleMessages[1])}>
-            Use sample
-          </button>
+          {sampleMessages.map((sampleMessage, index) => (
+            <button
+              key={sampleMessage}
+              type="button"
+              onClick={() => setMessageText(sampleMessage)}
+            >
+              Sample {index + 1}
+            </button>
+          ))}
         </div>
       </form>
     </section>

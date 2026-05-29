@@ -42,6 +42,22 @@ function App() {
     );
   }
 
+  function handleUpdateEvent(updatedEvent) {
+    setEvents((currentEvents) =>
+      currentEvents.map((eventItem) => {
+        if (eventItem.id !== updatedEvent.id) {
+          return eventItem;
+        }
+
+        return {
+          ...eventItem,
+          ...updatedEvent,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -64,7 +80,11 @@ function App() {
           onDismiss={handleDismiss}
         />
         <ReminderPanel events={events} />
-        <ScheduleList events={events} onDelete={handleDelete} />
+        <ScheduleList
+          events={events}
+          onDelete={handleDelete}
+          onUpdate={handleUpdateEvent}
+        />
       </section>
     </main>
   );

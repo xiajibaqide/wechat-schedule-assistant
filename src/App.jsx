@@ -3,7 +3,7 @@ import MessageInput from './components/MessageInput.jsx';
 import EventConfirmation from './components/EventConfirmation.jsx';
 import ScheduleList from './components/ScheduleList.jsx';
 import ReminderPanel from './components/ReminderPanel.jsx';
-import { extractEventDraft } from './utils/extractor.js';
+import { extractEventDraftHybrid } from './utils/hybridExtractor.js';
 import { loadEvents, saveEvents } from './utils/storage.js';
 import { WORKFLOW_STEPS } from './utils/workflow.js';
 
@@ -16,7 +16,7 @@ function App() {
   }, [events]);
 
   function handleExtract(messageText) {
-    const nextDraft = extractEventDraft(messageText);
+    const nextDraft = extractEventDraftHybrid(messageText);
     setDraftEvent(nextDraft);
   }
 

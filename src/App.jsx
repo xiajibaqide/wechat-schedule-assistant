@@ -23,7 +23,7 @@ function App() {
     requestNotificationPermission().catch(() => {
       // Notification permission is optional. Rejection should not break the app.
     });
-    startReminderLoop(() => eventsRef.current);
+    startReminderLoop(() => eventsRef.current, handleEventReminded);
 
     return () => {
       stopReminderLoop();
@@ -69,6 +69,21 @@ function App() {
           ...eventItem,
           ...updatedEvent,
           updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }
+
+  function handleEventReminded(eventId) {
+    setEvents((currentEvents) =>
+      currentEvents.map((eventItem) => {
+        if (eventItem.id !== eventId || eventItem.remindedAt) {
+          return eventItem;
+        }
+
+        return {
+          ...eventItem,
+          remindedAt: new Date().toISOString(),
         };
       })
     );

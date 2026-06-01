@@ -1,14 +1,19 @@
 import { showNotification } from './notificationService.js';
-import { getReminderMinutes, isConfirmedEvent } from './workflow.js';
+import {
+  getReminderMinutes,
+  hasBeenReminded,
+  isConfirmedEvent,
+  normalizeEvent,
+} from './workflow.js';
 
 let intervalId = null;
 const notifiedEventIds = new Set();
 
-export function startReminderLoop(eventsProvider) {
+export function startReminderLoop(eventsProvider, onEventReminded) {
   stopReminderLoop();
-  checkEvents(eventsProvider);
+  checkEvents(eventsProvider, onEventReminded);
   intervalId = setInterval(() => {
-    checkEvents(eventsProvider);
+    checkEvents(eventsProvider, onEventReminded);
   }, 60 * 1000);
 }
 
@@ -21,7 +26,7 @@ export function stopReminderLoop() {
   intervalId = null;
 }
 
-function checkEvents(eventsProvider) {
+function checkEvents(eventsProvider, onEventReminded) {
   const events = eventsProvider();
   const now = new Date();
 
@@ -29,9 +34,14 @@ function checkEvents(eventsProvider) {
     .filter(isConfirmedEvent)
     .filter((eventItem) => eventItem.date && eventItem.time)
     .forEach((eventItem) => {
-      const reminderMinutes = getReminderMinutes(eventItem);
+      const normalizedEvent = normalizeEvent(eventItem);
+      const reminderMinutes = getReminderMinutes(normalizedEvent);
 
-      if (reminderMinutes === 0 || notifiedEventIds.has(eventItem.id)) {
+      if (
+        reminderMinutes === 0 ||
+        notifiedEventIds.has(eventItem.id) ||
+        hasBeenReminded(normalizedEvent)
+      ) {
         return;
       }
 
@@ -45,6 +55,7 @@ function checkEvents(eventsProvider) {
 
         if (didNotify) {
           notifiedEventIds.add(eventItem.id);
+          onEventReminded(eventItem.id);
         }
       }
     });

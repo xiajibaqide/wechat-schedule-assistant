@@ -1,7 +1,6 @@
 import { showNotification } from './notificationService.js';
 
-// 正式使用：10分钟。开发测试时可临时改成 1 分钟。
-export const REMINDER_LEAD_MINUTES = 10;
+const DEFAULT_REMINDER_MINUTES = 10;
 
 let intervalId = null;
 const notifiedEventIds = new Set();
@@ -31,19 +30,19 @@ function checkEvents(eventsProvider) {
     .filter((eventItem) => eventItem.status === 'confirmed')
     .filter((eventItem) => eventItem.date && eventItem.time)
     .forEach((eventItem) => {
-      if (notifiedEventIds.has(eventItem.id)) {
+      const reminderMinutes =
+        eventItem.reminderMinutes ?? DEFAULT_REMINDER_MINUTES;
+
+      if (reminderMinutes === 0 || notifiedEventIds.has(eventItem.id)) {
         return;
       }
 
       const startTime = new Date(`${eventItem.date}T${eventItem.time}`);
       const minutesUntilStart = (startTime - now) / (60 * 1000);
 
-      if (
-        minutesUntilStart > 0 &&
-        minutesUntilStart <= REMINDER_LEAD_MINUTES
-      ) {
+      if (minutesUntilStart > 0 && minutesUntilStart <= reminderMinutes) {
         const didNotify = showNotification(eventItem.title || '未命名日程', {
-          body: buildNotificationBody(eventItem),
+          body: buildNotificationBody(eventItem, reminderMinutes),
         });
 
         if (didNotify) {
@@ -53,12 +52,20 @@ function checkEvents(eventsProvider) {
     });
 }
 
-function buildNotificationBody(eventItem) {
-  const body = `将在${REMINDER_LEAD_MINUTES}分钟内开始`;
+function buildNotificationBody(eventItem, reminderMinutes) {
+  const body = `将在${formatReminderLead(reminderMinutes)}内开始`;
 
   if (!eventItem.location) {
     return body;
   }
 
   return `${body}\n地点：${eventItem.location}`;
+}
+
+function formatReminderLead(reminderMinutes) {
+  if (reminderMinutes === 60) {
+    return '1小时';
+  }
+
+  return `${reminderMinutes}分钟`;
 }

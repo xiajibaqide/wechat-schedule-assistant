@@ -2,11 +2,22 @@ import { useState } from 'react';
 import { buildIcsCalendar, downloadIcsFile } from '../utils/icsExporter.js';
 import { showNotification } from '../utils/notificationService.js';
 
+const DEFAULT_REMINDER_MINUTES = 10;
+
+const reminderOptions = [
+  { value: 0, label: '不提醒' },
+  { value: 5, label: '5分钟' },
+  { value: 10, label: '10分钟' },
+  { value: 30, label: '30分钟' },
+  { value: 60, label: '1小时' },
+];
+
 const emptyEditForm = {
   title: '',
   date: '',
   time: '',
   location: '',
+  reminderMinutes: DEFAULT_REMINDER_MINUTES,
 };
 
 const statusText = {
@@ -30,6 +41,7 @@ function ScheduleList({ events, onDelete, onUpdate }) {
       date: eventItem.date,
       time: eventItem.time,
       location: eventItem.location,
+      reminderMinutes: eventItem.reminderMinutes ?? DEFAULT_REMINDER_MINUTES,
     });
   }
 
@@ -49,6 +61,7 @@ function ScheduleList({ events, onDelete, onUpdate }) {
     onUpdate({
       ...eventItem,
       ...editForm,
+      reminderMinutes: Number(editForm.reminderMinutes),
     });
     cancelEditing();
   }
@@ -125,7 +138,8 @@ function EventSummary({ eventItem }) {
       </p>
       <p className="muted">
         {statusText[eventItem.status] || eventItem.status} - 置信度{' '}
-        {Math.round(eventItem.confidence * 100)}%
+        {Math.round(eventItem.confidence * 100)}% - 提醒：
+        {formatReminderText(eventItem.reminderMinutes)}
       </p>
     </div>
   );
@@ -168,6 +182,21 @@ function EditEventForm({ editForm, onChange, onSave, onCancel }) {
           placeholder="例如：图书馆门口"
         />
       </label>
+      <label>
+        提醒设置
+        <select
+          value={editForm.reminderMinutes}
+          onChange={(event) =>
+            onChange('reminderMinutes', Number(event.target.value))
+          }
+        >
+          {reminderOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="button-row">
         <button type="button" onClick={onSave}>
           保存
@@ -178,6 +207,20 @@ function EditEventForm({ editForm, onChange, onSave, onCancel }) {
       </div>
     </div>
   );
+}
+
+function formatReminderText(reminderMinutes) {
+  const minutes = reminderMinutes ?? DEFAULT_REMINDER_MINUTES;
+
+  if (minutes === 0) {
+    return '不提醒';
+  }
+
+  if (minutes === 60) {
+    return '提前1小时';
+  }
+
+  return `提前${minutes}分钟`;
 }
 
 function getTodayFileDate() {

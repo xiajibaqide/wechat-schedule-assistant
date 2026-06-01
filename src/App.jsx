@@ -39,6 +39,7 @@ function App() {
     const confirmedEvent = {
       ...updatedEvent,
       status: 'confirmed',
+      reminderMinutes: updatedEvent.reminderMinutes ?? 10,
       confirmedAt: new Date().toISOString(),
     };
 

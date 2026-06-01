@@ -2,18 +2,24 @@ import { showNotification } from './notificationService.js';
 import {
   getReminderMinutes,
   hasBeenReminded,
+  hasEnded,
   isConfirmedEvent,
+  isEventPast,
   normalizeEvent,
 } from './workflow.js';
 
 let intervalId = null;
 const notifiedEventIds = new Set();
 
-export function startReminderLoop(eventsProvider, onEventReminded) {
+export function startReminderLoop(
+  eventsProvider,
+  onEventReminded,
+  onEventEnded
+) {
   stopReminderLoop();
-  checkEvents(eventsProvider, onEventReminded);
+  checkEvents(eventsProvider, onEventReminded, onEventEnded);
   intervalId = setInterval(() => {
-    checkEvents(eventsProvider, onEventReminded);
+    checkEvents(eventsProvider, onEventReminded, onEventEnded);
   }, 60 * 1000);
 }
 
@@ -26,7 +32,7 @@ export function stopReminderLoop() {
   intervalId = null;
 }
 
-function checkEvents(eventsProvider, onEventReminded) {
+function checkEvents(eventsProvider, onEventReminded, onEventEnded) {
   const events = eventsProvider();
   const now = new Date();
 
@@ -35,6 +41,16 @@ function checkEvents(eventsProvider, onEventReminded) {
     .filter((eventItem) => eventItem.date && eventItem.time)
     .forEach((eventItem) => {
       const normalizedEvent = normalizeEvent(eventItem);
+
+      if (!hasEnded(normalizedEvent) && isEventPast(normalizedEvent)) {
+        onEventEnded(eventItem.id);
+        return;
+      }
+
+      if (hasEnded(normalizedEvent)) {
+        return;
+      }
+
       const reminderMinutes = getReminderMinutes(normalizedEvent);
 
       if (

@@ -1,4 +1,5 @@
 const DEFAULT_REMINDER_MINUTES = 10;
+const DEFAULT_EVENT_DURATION_MINUTES = 60;
 
 // Event status describes the user's decision about an extracted event.
 // It should not store UI-only workflow stages such as raw or extracted.
@@ -78,7 +79,17 @@ export function normalizeEvent(eventItem) {
   };
 }
 
-export function isEventPast() {
-  // v1.5-d will implement time-based ending, likely using start time + duration.
-  return false;
+export function isEventPast(eventItem) {
+  const normalizedEvent = normalizeEvent(eventItem);
+
+  if (!normalizedEvent.date || !normalizedEvent.time) {
+    return false;
+  }
+
+  const startTime = new Date(`${normalizedEvent.date}T${normalizedEvent.time}`);
+  const endTime = new Date(startTime);
+
+  endTime.setMinutes(endTime.getMinutes() + DEFAULT_EVENT_DURATION_MINUTES);
+
+  return new Date() > endTime;
 }

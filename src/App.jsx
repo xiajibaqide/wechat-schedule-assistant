@@ -7,7 +7,12 @@ import { extractEventDraftHybrid } from './utils/hybridExtractor.js';
 import { requestNotificationPermission } from './utils/notificationService.js';
 import { startReminderLoop, stopReminderLoop } from './utils/reminderService.js';
 import { loadEvents, saveEvents } from './utils/storage.js';
-import { WORKFLOW_STEPS } from './utils/workflow.js';
+import {
+  getWorkflowStepCount,
+  hasBeenReminded,
+  hasEnded,
+  WORKFLOW_STEPS,
+} from './utils/workflow.js';
 
 function App() {
   const [events, setEvents] = useState(() => loadEvents());
@@ -81,7 +86,7 @@ function App() {
   function handleEventReminded(eventId) {
     setEvents((currentEvents) =>
       currentEvents.map((eventItem) => {
-        if (eventItem.id !== eventId || eventItem.remindedAt) {
+        if (eventItem.id !== eventId || hasBeenReminded(eventItem)) {
           return eventItem;
         }
 
@@ -96,7 +101,7 @@ function App() {
   function handleEventEnded(eventId) {
     setEvents((currentEvents) =>
       currentEvents.map((eventItem) => {
-        if (eventItem.id !== eventId || eventItem.endedAt) {
+        if (eventItem.id !== eventId || hasEnded(eventItem)) {
           return eventItem;
         }
 
@@ -116,9 +121,16 @@ function App() {
           <h1>微信日程助手</h1>
         </div>
         <ol className="workflow-list" aria-label="助手工作流">
-          {WORKFLOW_STEPS.map((step) => (
-            <li key={step.id}>{step.label}</li>
-          ))}
+          {WORKFLOW_STEPS.map((step) => {
+            const count = getWorkflowStepCount(step.id, events, draftEvent);
+
+            return (
+              <li key={step.id}>
+                {step.label}
+                {count === null ? '' : `(${count})`}
+              </li>
+            );
+          })}
         </ol>
       </header>
 

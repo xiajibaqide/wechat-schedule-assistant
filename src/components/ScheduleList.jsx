@@ -3,7 +3,10 @@ import { buildIcsCalendar, downloadIcsFile } from '../utils/icsExporter.js';
 import { showNotification } from '../utils/notificationService.js';
 import {
   getReminderMinutes,
+  hasBeenReminded,
+  hasEnded,
   isConfirmedEvent,
+  normalizeEvent,
   STATUS_LABELS,
 } from '../utils/workflow.js';
 
@@ -124,6 +127,9 @@ function ScheduleList({ events, onDelete, onUpdate }) {
 }
 
 function EventSummary({ eventItem }) {
+  const normalizedEvent = normalizeEvent(eventItem);
+  const lifecycleText = getLifecycleText(normalizedEvent);
+
   return (
     <div>
       <strong>{eventItem.title || '未命名日程'}</strong>
@@ -135,6 +141,7 @@ function EventSummary({ eventItem }) {
         {STATUS_LABELS[eventItem.status] || eventItem.status} - 置信度{' '}
         {Math.round(eventItem.confidence * 100)}% - 提醒：
         {formatReminderText(eventItem)}
+        {lifecycleText ? ` - ${lifecycleText}` : ''}
       </p>
     </div>
   );
@@ -202,6 +209,20 @@ function EditEventForm({ editForm, onChange, onSave, onCancel }) {
       </div>
     </div>
   );
+}
+
+function getLifecycleText(eventItem) {
+  const labels = [];
+
+  if (hasBeenReminded(eventItem)) {
+    labels.push('🔔 已提醒');
+  }
+
+  if (hasEnded(eventItem)) {
+    labels.push('🏁 已结束');
+  }
+
+  return labels.join(' · ');
 }
 
 function formatReminderText(eventItem) {

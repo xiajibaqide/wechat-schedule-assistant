@@ -16,7 +16,7 @@ export const STATUS_LABELS = {
 };
 
 // WORKFLOW_STEPS is for the top UI flow display. These steps are broader
-// than event.status because some steps are input or lifecycle stages.
+// than event.status because some steps are input, extraction, or lifecycle stages.
 export const WORKFLOW_STEPS = [
   {
     id: 'raw-message',
@@ -49,6 +49,10 @@ export const WORKFLOW_STEPS = [
     type: 'lifecycle',
   },
 ];
+
+export function isPendingEvent(eventItem) {
+  return eventItem?.status === EVENT_STATUS.pending;
+}
 
 export function isConfirmedEvent(eventItem) {
   return eventItem?.status === EVENT_STATUS.confirmed;
@@ -92,4 +96,50 @@ export function isEventPast(eventItem) {
   endTime.setMinutes(endTime.getMinutes() + DEFAULT_EVENT_DURATION_MINUTES);
 
   return new Date() > endTime;
+}
+
+export function getPendingCount(events, draftEvent) {
+  const savedPendingCount = events.filter(isPendingEvent).length;
+
+  if (draftEvent && isPendingEvent(draftEvent)) {
+    return savedPendingCount + 1;
+  }
+
+  return savedPendingCount;
+}
+
+export function getConfirmedCount(events) {
+  return events.filter(isConfirmedEvent).length;
+}
+
+export function getRemindedCount(events) {
+  return events.filter((eventItem) => {
+    return isConfirmedEvent(eventItem) && hasBeenReminded(normalizeEvent(eventItem));
+  }).length;
+}
+
+export function getEndedCount(events) {
+  return events.filter((eventItem) => {
+    return isConfirmedEvent(eventItem) && hasEnded(normalizeEvent(eventItem));
+  }).length;
+}
+
+export function getWorkflowStepCount(stepId, events, draftEvent) {
+  if (stepId === EVENT_STATUS.pending) {
+    return getPendingCount(events, draftEvent);
+  }
+
+  if (stepId === EVENT_STATUS.confirmed) {
+    return getConfirmedCount(events);
+  }
+
+  if (stepId === 'reminded') {
+    return getRemindedCount(events);
+  }
+
+  if (stepId === 'ended') {
+    return getEndedCount(events);
+  }
+
+  return null;
 }

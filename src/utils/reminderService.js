@@ -1,6 +1,5 @@
 import { showNotification } from './notificationService.js';
-
-const DEFAULT_REMINDER_MINUTES = 10;
+import { getReminderMinutes, isConfirmedEvent } from './workflow.js';
 
 let intervalId = null;
 const notifiedEventIds = new Set();
@@ -27,11 +26,10 @@ function checkEvents(eventsProvider) {
   const now = new Date();
 
   events
-    .filter((eventItem) => eventItem.status === 'confirmed')
+    .filter(isConfirmedEvent)
     .filter((eventItem) => eventItem.date && eventItem.time)
     .forEach((eventItem) => {
-      const reminderMinutes =
-        eventItem.reminderMinutes ?? DEFAULT_REMINDER_MINUTES;
+      const reminderMinutes = getReminderMinutes(eventItem);
 
       if (reminderMinutes === 0 || notifiedEventIds.has(eventItem.id)) {
         return;

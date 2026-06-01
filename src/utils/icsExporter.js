@@ -1,8 +1,10 @@
+import { isConfirmedEvent } from './workflow.js';
+
 const DEFAULT_EVENT_DURATION_MINUTES = 60;
 
 export function buildIcsCalendar(events) {
   const exportableEvents = events.filter((eventItem) => {
-    return eventItem.status === 'confirmed' && eventItem.date;
+    return isConfirmedEvent(eventItem) && eventItem.date;
   });
   const icsEvents = exportableEvents.map(buildIcsEvent).filter(Boolean);
 
@@ -17,7 +19,7 @@ export function buildIcsCalendar(events) {
 }
 
 export function buildIcsEvent(eventItem) {
-  if (eventItem.status !== 'confirmed' || !eventItem.date) {
+  if (!isConfirmedEvent(eventItem) || !eventItem.date) {
     return '';
   }
 

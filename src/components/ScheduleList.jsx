@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { buildIcsCalendar, downloadIcsFile } from '../utils/icsExporter.js';
 import { showNotification } from '../utils/notificationService.js';
-
-const DEFAULT_REMINDER_MINUTES = 10;
+import {
+  getReminderMinutes,
+  isConfirmedEvent,
+  STATUS_LABELS,
+} from '../utils/workflow.js';
 
 const reminderOptions = [
   { value: 0, label: '不提醒' },
@@ -17,21 +20,13 @@ const emptyEditForm = {
   date: '',
   time: '',
   location: '',
-  reminderMinutes: DEFAULT_REMINDER_MINUTES,
-};
-
-const statusText = {
-  pending: '待确认',
-  confirmed: '已确认',
-  dismissed: '已忽略',
+  reminderMinutes: 10,
 };
 
 function ScheduleList({ events, onDelete, onUpdate }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
-  const confirmedEvents = events.filter(
-    (eventItem) => eventItem.status === 'confirmed'
-  );
+  const confirmedEvents = events.filter(isConfirmedEvent);
   const exportableEvents = confirmedEvents.filter((eventItem) => eventItem.date);
 
   function startEditing(eventItem) {
@@ -41,7 +36,7 @@ function ScheduleList({ events, onDelete, onUpdate }) {
       date: eventItem.date,
       time: eventItem.time,
       location: eventItem.location,
-      reminderMinutes: eventItem.reminderMinutes ?? DEFAULT_REMINDER_MINUTES,
+      reminderMinutes: getReminderMinutes(eventItem),
     });
   }
 
@@ -137,9 +132,9 @@ function EventSummary({ eventItem }) {
         {eventItem.location ? ` - ${eventItem.location}` : ''}
       </p>
       <p className="muted">
-        {statusText[eventItem.status] || eventItem.status} - 置信度{' '}
+        {STATUS_LABELS[eventItem.status] || eventItem.status} - 置信度{' '}
         {Math.round(eventItem.confidence * 100)}% - 提醒：
-        {formatReminderText(eventItem.reminderMinutes)}
+        {formatReminderText(eventItem)}
       </p>
     </div>
   );
@@ -209,8 +204,8 @@ function EditEventForm({ editForm, onChange, onSave, onCancel }) {
   );
 }
 
-function formatReminderText(reminderMinutes) {
-  const minutes = reminderMinutes ?? DEFAULT_REMINDER_MINUTES;
+function formatReminderText(eventItem) {
+  const minutes = getReminderMinutes(eventItem);
 
   if (minutes === 0) {
     return '不提醒';

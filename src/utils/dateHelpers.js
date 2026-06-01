@@ -1,3 +1,5 @@
+import { isConfirmedEvent } from './workflow.js';
+
 export function getTodayInputDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -6,7 +8,7 @@ export function getUpcomingEvents(events) {
   const now = new Date();
 
   return events
-    .filter((eventItem) => eventItem.status === 'confirmed')
+    .filter(isConfirmedEvent)
     .filter((eventItem) => eventItem.date && eventItem.time)
     .filter((eventItem) => new Date(`${eventItem.date}T${eventItem.time}`) >= now)
     .sort((firstEvent, secondEvent) => {

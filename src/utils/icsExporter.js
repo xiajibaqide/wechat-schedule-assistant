@@ -1,6 +1,4 @@
-import { isConfirmedEvent } from './workflow.js';
-
-const DEFAULT_EVENT_DURATION_MINUTES = 60;
+import { getDurationMinutes, isConfirmedEvent } from './workflow.js';
 
 export function buildIcsCalendar(events) {
   const exportableEvents = events.filter((eventItem) => {
@@ -33,7 +31,7 @@ export function buildIcsEvent(eventItem) {
 
   if (eventItem.time) {
     lines.push(`DTSTART:${formatIcsDateTime(eventItem.date, eventItem.time)}`);
-    lines.push(`DTEND:${formatIcsDateTime(eventItem.date, eventItem.time, DEFAULT_EVENT_DURATION_MINUTES)}`);
+    lines.push(`DTEND:${formatIcsDateTime(eventItem.date, eventItem.time, getDurationMinutes(eventItem))}`);
   } else {
     lines.push(`DTSTART;VALUE=DATE:${formatIcsDate(eventItem.date)}`);
     lines.push(`DTEND;VALUE=DATE:${formatIcsDate(addDaysToDateString(eventItem.date, 1))}`);

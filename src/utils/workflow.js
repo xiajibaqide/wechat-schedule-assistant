@@ -74,10 +74,15 @@ export function getReminderMinutes(eventItem) {
   return eventItem?.reminderMinutes ?? DEFAULT_REMINDER_MINUTES;
 }
 
+export function getDurationMinutes(eventItem) {
+  return eventItem?.durationMinutes ?? DEFAULT_EVENT_DURATION_MINUTES;
+}
+
 export function normalizeEvent(eventItem) {
   return {
     ...eventItem,
     reminderMinutes: getReminderMinutes(eventItem),
+    durationMinutes: getDurationMinutes(eventItem),
     remindedAt: eventItem?.remindedAt ?? null,
     endedAt: eventItem?.endedAt ?? null,
   };
@@ -93,7 +98,7 @@ export function isEventPast(eventItem) {
   const startTime = new Date(`${normalizedEvent.date}T${normalizedEvent.time}`);
   const endTime = new Date(startTime);
 
-  endTime.setMinutes(endTime.getMinutes() + DEFAULT_EVENT_DURATION_MINUTES);
+  endTime.setMinutes(endTime.getMinutes() + getDurationMinutes(normalizedEvent));
 
   return new Date() > endTime;
 }

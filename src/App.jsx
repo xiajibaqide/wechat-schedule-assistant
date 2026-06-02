@@ -49,6 +49,7 @@ function App() {
       ...updatedEvent,
       status: 'confirmed',
       reminderMinutes: updatedEvent.reminderMinutes ?? 10,
+      durationMinutes: updatedEvent.durationMinutes ?? 60,
       confirmedAt: new Date().toISOString(),
     };
 

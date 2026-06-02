@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const DEFAULT_REMINDER_MINUTES = 10;
+const DEFAULT_DURATION_MINUTES = 60;
 
 const reminderOptions = [
   { value: 0, label: '不提醒' },
@@ -10,12 +11,20 @@ const reminderOptions = [
   { value: 60, label: '1小时' },
 ];
 
+const durationOptions = [
+  { value: 30, label: '30分钟' },
+  { value: 60, label: '60分钟' },
+  { value: 90, label: '90分钟' },
+  { value: 120, label: '120分钟' },
+];
+
 const emptyForm = {
   title: '',
   date: '',
   time: '',
   location: '',
   reminderMinutes: DEFAULT_REMINDER_MINUTES,
+  durationMinutes: DEFAULT_DURATION_MINUTES,
 };
 
 const statusText = {
@@ -39,6 +48,7 @@ function EventConfirmation({ draftEvent, onConfirm, onDismiss }) {
       time: draftEvent.time,
       location: draftEvent.location,
       reminderMinutes: draftEvent.reminderMinutes ?? DEFAULT_REMINDER_MINUTES,
+      durationMinutes: draftEvent.durationMinutes ?? DEFAULT_DURATION_MINUTES,
     });
   }, [draftEvent]);
 
@@ -62,6 +72,7 @@ function EventConfirmation({ draftEvent, onConfirm, onDismiss }) {
     ...draftEvent,
     ...formData,
     reminderMinutes: Number(formData.reminderMinutes),
+    durationMinutes: Number(formData.durationMinutes),
   };
 
   return (
@@ -116,6 +127,21 @@ function EventConfirmation({ draftEvent, onConfirm, onDismiss }) {
             }
           >
             {reminderOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          持续时间
+          <select
+            value={formData.durationMinutes}
+            onChange={(event) =>
+              updateField('durationMinutes', Number(event.target.value))
+            }
+          >
+            {durationOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

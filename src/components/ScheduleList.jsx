@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { buildIcsCalendar, downloadIcsFile } from '../utils/icsExporter.js';
 import { showNotification } from '../utils/notificationService.js';
 import {
+  getDurationMinutes,
   getReminderMinutes,
   hasBeenReminded,
   hasEnded,
@@ -18,12 +19,20 @@ const reminderOptions = [
   { value: 60, label: '1小时' },
 ];
 
+const durationOptions = [
+  { value: 30, label: '30分钟' },
+  { value: 60, label: '60分钟' },
+  { value: 90, label: '90分钟' },
+  { value: 120, label: '120分钟' },
+];
+
 const emptyEditForm = {
   title: '',
   date: '',
   time: '',
   location: '',
   reminderMinutes: 10,
+  durationMinutes: 60,
 };
 
 function ScheduleList({ events, onDelete, onUpdate }) {
@@ -40,6 +49,7 @@ function ScheduleList({ events, onDelete, onUpdate }) {
       time: eventItem.time,
       location: eventItem.location,
       reminderMinutes: getReminderMinutes(eventItem),
+      durationMinutes: getDurationMinutes(eventItem),
     });
   }
 
@@ -60,6 +70,7 @@ function ScheduleList({ events, onDelete, onUpdate }) {
       ...eventItem,
       ...editForm,
       reminderMinutes: Number(editForm.reminderMinutes),
+      durationMinutes: Number(editForm.durationMinutes),
     });
     cancelEditing();
   }
@@ -140,7 +151,8 @@ function EventSummary({ eventItem }) {
       <p className="muted">
         {STATUS_LABELS[eventItem.status] || eventItem.status} - 置信度{' '}
         {Math.round(eventItem.confidence * 100)}% - 提醒：
-        {formatReminderText(eventItem)}
+        {formatReminderText(eventItem)} - 持续：
+        {formatDurationText(eventItem)}
         {lifecycleText ? ` - ${lifecycleText}` : ''}
       </p>
     </div>
@@ -199,6 +211,21 @@ function EditEventForm({ editForm, onChange, onSave, onCancel }) {
           ))}
         </select>
       </label>
+      <label>
+        持续时间
+        <select
+          value={editForm.durationMinutes}
+          onChange={(event) =>
+            onChange('durationMinutes', Number(event.target.value))
+          }
+        >
+          {durationOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="button-row">
         <button type="button" onClick={onSave}>
           保存
@@ -237,6 +264,10 @@ function formatReminderText(eventItem) {
   }
 
   return `提前${minutes}分钟`;
+}
+
+function formatDurationText(eventItem) {
+  return `${getDurationMinutes(eventItem)}分钟`;
 }
 
 function getTodayFileDate() {
